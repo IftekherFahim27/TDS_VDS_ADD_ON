@@ -41,7 +41,9 @@ namespace TDS_VDS_ADD_ON.Resources
             this.CheckBox0 = ((SAPbouiCOM.CheckBox)(this.GetItem("CHKACT").Specific));
             this.ComboBox0 = ((SAPbouiCOM.ComboBox)(this.GetItem("COMBTYPE").Specific));
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
+            this.Button0.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.Button0_PressedBefore);
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
+            this.EditText9 = ((SAPbouiCOM.EditText)(this.GetItem("ETDOCTRY").Specific));
             this.OnCustomInitialize();
 
         }
@@ -83,5 +85,93 @@ namespace TDS_VDS_ADD_ON.Resources
         private SAPbouiCOM.ComboBox ComboBox0;
         private SAPbouiCOM.Button Button0;
         private SAPbouiCOM.Button Button1;
+        private SAPbouiCOM.EditText EditText9;
+
+        private void Button0_PressedBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            SAPbouiCOM.Form oform = Application.SBO_Application.Forms.Item(pVal.FormUID);
+            if (oform.Mode == SAPbouiCOM.BoFormMode.fm_ADD_MODE || oform.Mode == SAPbouiCOM.BoFormMode.fm_UPDATE_MODE)
+            {
+                ValidateForm(ref oform, ref BubbleEvent);
+            }
+
+        }
+
+        private bool ValidateForm(ref SAPbouiCOM.Form pForm, ref bool BubbleEvent)
+        {
+            string Code  = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("Code", 0);
+            string Desc  = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_TAXDESC", 0);
+            string TDS   = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_TDSP", 0);
+            string VDS   = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_VDSP", 0);
+            string TDSGL = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_TDSGL", 0);
+            string VDSGL = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_VDSGL", 0);
+            string efd   = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_EFRMDATE", 0);
+            string etd   = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_ETODATE", 0);
+            string sec   = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_TSECTION", 0);
+            string type  = pForm.DataSources.DBDataSources.Item("@FIL_MH_TDSVDSM").GetValue("U_TYPE", 0);
+
+            if (Code == "")
+            {
+                Global.GFunc.ShowError("Enter Tax Code");
+                pForm.ActiveItem = "ETTCODE";
+                return BubbleEvent = false;
+            }
+            else if (Desc == "")
+            {
+                Global.GFunc.ShowError("Enter Tax Description");
+                pForm.ActiveItem = "ETTDESC";
+                return BubbleEvent = false;
+            }
+            else if (TDS == "")
+            {
+                Global.GFunc.ShowError("Enter TDS");
+                pForm.ActiveItem = "ETTDS";
+                return BubbleEvent = false;
+            }
+            else if (VDS == "")
+            {
+                Global.GFunc.ShowError("Enter VDS");
+                pForm.ActiveItem = "ETVDS";
+                return BubbleEvent = false;
+            }
+            else if (TDSGL == "")
+            {
+                Global.GFunc.ShowError("Enter TDSGL");
+                pForm.ActiveItem = "ETTDSGL";
+                return BubbleEvent = false;
+            }
+            else if (VDSGL == "")
+            {
+                Global.GFunc.ShowError("Enter VDSGL");
+                pForm.ActiveItem = "ETVDSGL";
+                return BubbleEvent = false;
+            }
+            else if (efd == "")
+            {
+                Global.GFunc.ShowError("Enter Effective From Date ");
+                pForm.ActiveItem = "ETEFDAT";
+                return BubbleEvent = false;
+            }
+            else if (etd == "")
+            {
+                Global.GFunc.ShowError("Enter Effective To Date");
+                pForm.ActiveItem = "ETETDAT";
+                return BubbleEvent = false;
+            }
+            else if (sec == "")
+            {
+                Global.GFunc.ShowError("Enter Section ");
+                pForm.ActiveItem = "ETTDESC";
+                return BubbleEvent = false;
+            }
+            else if (type == "")
+            {
+                Global.GFunc.ShowError("Select The TYPE");
+                pForm.ActiveItem = "COMBTYPE";
+                return BubbleEvent = false;
+            }
+            return BubbleEvent;
+        }
     }
 }
