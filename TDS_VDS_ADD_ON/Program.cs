@@ -27,6 +27,13 @@ namespace TDS_VDS_ADD_ON
                 }
                 Menu MyMenu = new Menu();
                 MyMenu.BasicStart();
+
+               // ApInvoiceAddOn objAPI;
+               // objAPI = new ApInvoiceAddOn();
+
+                POAddOn objPO;
+                objPO = new POAddOn();
+
                 oApp.RegisterMenuEventHandler(MyMenu.SBO_Application_MenuEvent);
                 Application.SBO_Application.AppEvent += new SAPbouiCOM._IApplicationEvents_AppEventEventHandler(SBO_Application_AppEvent);
                 oApp.Run();
