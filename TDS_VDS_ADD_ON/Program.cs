@@ -28,11 +28,20 @@ namespace TDS_VDS_ADD_ON
                 Menu MyMenu = new Menu();
                 MyMenu.BasicStart();
 
-               // ApInvoiceAddOn objAPI;
-               // objAPI = new ApInvoiceAddOn();
+               // 
 
                 POAddOn objPO;
                 objPO = new POAddOn();
+
+                ApInvoiceAddOn objAPI;
+                objAPI = new ApInvoiceAddOn();
+
+                GRPOAddOn objGRPO;
+                objGRPO = new GRPOAddOn();
+
+                APDownInvoice objAPDI;
+                objAPDI = new APDownInvoice();
+
 
                 oApp.RegisterMenuEventHandler(MyMenu.SBO_Application_MenuEvent);
                 Application.SBO_Application.AppEvent += new SAPbouiCOM._IApplicationEvents_AppEventEventHandler(SBO_Application_AppEvent);

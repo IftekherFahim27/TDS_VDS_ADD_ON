@@ -46,9 +46,12 @@
     <Reference Include="SAPBusinessOneSDK" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="APDownInvoice.cs" />
     <Compile Include="ApInvoiceAddOn.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="GlobalFunction.cs" />
+    <Compile Include="GRPOAddOn.cs" />
+    <Compile Include="PaymentsMeansAddon.cs" />
     <Compile Include="POAddOn.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Menu.cs" />
@@ -56,6 +59,8 @@
     <Compile Include="Resources\Form_TDS_VDS.b1f.cs">
       <DependentUpon>Form_TDS_VDS.b1f</DependentUpon>
     </Compile>
+    <Compile Include="SAPFormHandlerBase.cs" />
+    <Compile Include="TDSVDSHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Form_TDS_VDS.b1f">

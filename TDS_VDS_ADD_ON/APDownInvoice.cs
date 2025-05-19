@@ -1,30 +1,32 @@
-﻿using SAPbouiCOM.Framework;                 
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SAPbouiCOM.Framework;
 
 namespace TDS_VDS_ADD_ON
 {
-    class ApInvoiceAddOn
+    class APDownInvoice
     {
-        public ApInvoiceAddOn()
+        public APDownInvoice()
         {
             Application.SBO_Application.ItemEvent += new SAPbouiCOM._IApplicationEvents_ItemEventEventHandler(SBO_Application_ItemEvent);
            
         }
 
-
-        public string formnum = "141";
+        public string formnum = "65301";
         public string spos = "34";
         public string epos = "33";
-        public string db = "OPCH";
+        public string db = "ODPO";
+
         private void SBO_Application_ItemEvent(string FormUID, ref SAPbouiCOM.ItemEvent pVal, out bool BubbleEvent)
         {
             SAPFormHandlerBase.SBO_Application_ItemEvent(FormUID, ref pVal, out BubbleEvent,
                                                       formnum, spos, epos, db);
+
         }
-           
+
+
     }
 }
