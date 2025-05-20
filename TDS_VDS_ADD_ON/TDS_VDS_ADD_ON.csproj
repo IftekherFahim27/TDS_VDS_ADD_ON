@@ -51,6 +51,7 @@
     <Compile Include="Global.cs" />
     <Compile Include="GlobalFunction.cs" />
     <Compile Include="GRPOAddOn.cs" />
+    <Compile Include="OutgoingPayment.cs" />
     <Compile Include="PaymentsMeansAddon.cs" />
     <Compile Include="POAddOn.cs" />
     <Compile Include="Program.cs" />

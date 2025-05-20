@@ -13,58 +13,174 @@ namespace TDS_VDS_ADD_ON
         public PaymentsMeansAddon()
         {
             Application.SBO_Application.ItemEvent += new SAPbouiCOM._IApplicationEvents_ItemEventEventHandler(SBO_Application_ItemEvent);
-            Application.SBO_Application.FormDataEvent += new SAPbouiCOM._IApplicationEvents_FormDataEventEventHandler(oApplication_FormDataEvent);
+           
         }
+
+        public double amtbank;
+        public double amtcash;
+        public double baseamt;
+        //int bankfast=0;
+        //int cashfast=0;
+        public double basebank;
+        public double remainbank;
 
         private void SBO_Application_ItemEvent(string FormUID, ref SAPbouiCOM.ItemEvent pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
             try
             {
-                if (pVal.FormTypeEx == "142" && pVal.EventType != SAPbouiCOM.BoEventTypes.et_FORM_UNLOAD)
+                if (pVal.FormTypeEx == "196" && pVal.EventType != SAPbouiCOM.BoEventTypes.et_FORM_UNLOAD)
                 {
                     //define a form in 3 ways 
                     SAPbouiCOM.Form oform = Application.SBO_Application.Forms.GetFormByTypeAndCount(pVal.FormType, pVal.FormTypeCount);
 
                     if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_FORM_LOAD && pVal.BeforeAction == true)
                     {
-
+                        SAPbouiCOM.Item oNewItemN;
+                        SAPbouiCOM.Item oItem;
+                        //Adding button
+                        oNewItemN = oform.Items.Add("btn1", SAPbouiCOM.BoFormItemTypes.it_BUTTON);
+                        oItem = oform.Items.Item("8");
+                       
+                        oNewItemN.Left = oItem.Left + 140;
+                        oNewItemN.Width = 80;
+                        oNewItemN.Height = oItem.Height;
+                        oNewItemN.Top = oItem.Top;
+                        oNewItemN.Visible = true;
+                        SAPbouiCOM.Button btn = (SAPbouiCOM.Button)oNewItemN.Specific;
+                        btn.Caption = "Load TDS VDS";
 
 
 
                     }
 
-                    else if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_ITEM_PRESSED && pVal.BeforeAction == true)
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_CLICK && pVal.BeforeAction == false && pVal.ItemUID == "btn1")
                     {
-
-                    }
-
-
-                    else if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_KEY_DOWN && pVal.BeforeAction == true)
-                    {
-
-                    }
-                    else if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_COMBO_SELECT && pVal.BeforeAction == true)
-                    {
-                        if (pVal.ItemUID == "btn" && oform.Mode != SAPbouiCOM.BoFormMode.fm_OK_MODE)
+                        try
                         {
+                            // === Step 0: Get values from Form 426 ===
+                            double tdsAmount = 0.0;
+                            double vdsAmount = 0.0;
+
+                            // Loop through all open forms to find Form 426
+                            for (int i = 0; i < Application.SBO_Application.Forms.Count; i++)
+                            {
+                                SAPbouiCOM.Form otherForm = Application.SBO_Application.Forms.Item(i);
+                                if (otherForm.TypeEx == "426")
+                                {
+                                    // Get EditText values
+                                    SAPbouiCOM.EditText etTDS = (SAPbouiCOM.EditText)otherForm.Items.Item("ET_TDS").Specific;
+                                    SAPbouiCOM.EditText etVDS = (SAPbouiCOM.EditText)otherForm.Items.Item("ET_VDS").Specific;
+
+                                    double.TryParse(etTDS.Value.Trim(), out tdsAmount);
+                                    double.TryParse(etVDS.Value.Trim(), out vdsAmount);
+                                    break;
+                                }
+                            }
+
+                            // === Step 1: VDS Calculation & Set on Matrix 112 ===
+                            SAPbouiCOM.Matrix oMatrix112 = (SAPbouiCOM.Matrix)oform.Items.Item("112").Specific;
+
+                            SAPbouiCOM.ComboBox oCombo = (SAPbouiCOM.ComboBox)oMatrix112.Columns.Item("41").Cells.Item(1).Specific;
+                            oCombo.Select("TDS", SAPbouiCOM.BoSearchKey.psk_ByValue);
+                            string cc ="TDS";
+
+                            SAPbobsCOM.Recordset oRS = (SAPbobsCOM.Recordset)Global.oComp.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                            string qstr = string.Format(@"SELECT {0}AcctCode{0} FROM {0}OCRC{0} WHERE {0}CardName{0} ='" + cc + "'", '"');
+                            oRS.DoQuery(qstr);
+
+                            string tdsgl = Convert.ToString(oRS.Fields.Item("AcctCode").Value);
+                            SAPbouiCOM.EditText oEdittdsgl = (SAPbouiCOM.EditText)oMatrix112.Columns.Item("67").Cells.Item(1).Specific;
+                            oEdittdsgl.Value =tdsgl;
+
+                            SAPbouiCOM.EditText oEdit = (SAPbouiCOM.EditText)oMatrix112.Columns.Item("46").Cells.Item(1).Specific;
+                            oEdit.Value = tdsAmount.ToString("F2");
+
+
+                            // === Step 2: Insert into Matrix 55 - First Row ===
+                            SAPbouiCOM.Matrix oMatrix55 = (SAPbouiCOM.Matrix)oform.Items.Item("55").Specific;
+                            int newRow1 = oMatrix55.RowCount;
+
+                            SAPbouiCOM.EditText col22Row1 = (SAPbouiCOM.EditText)oMatrix55.Columns.Item("22").Cells.Item(newRow1).Specific;
+                            col22Row1.Value = "Define New";
+
+                            // === Step 3: Switch ComboBox to VDS and update amount ===
+                            oCombo.Select("VDS", SAPbouiCOM.BoSearchKey.psk_ByValue);
+                            cc = "VDS";
+
+                            SAPbobsCOM.Recordset oRS2 = (SAPbobsCOM.Recordset)Global.oComp.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                            string qstr2 = string.Format(@"SELECT {0}AcctCode{0} FROM {0}OCRC{0} WHERE {0}CardName{0} ='" + cc + "'", '"');
+                            oRS2.DoQuery(qstr2);
+
+                            string vdsgl = Convert.ToString(oRS2.Fields.Item("AcctCode").Value);
+                            SAPbouiCOM.EditText oEditvdsgl = (SAPbouiCOM.EditText)oMatrix112.Columns.Item("67").Cells.Item(1).Specific;
+                            oEditvdsgl.Value = vdsgl;
+
+                            oEdit.Value = vdsAmount.ToString("F2");
+
+                            SAPbouiCOM.EditText balance = (SAPbouiCOM.EditText)oform.Items.Item("12").Specific;
+                            string bal = balance.Value.Trim();
+                            string bal2 = bal.StartsWith("BDT") ? bal.Substring(4).Trim() : bal;
+                            baseamt = double.TryParse(bal2, out double parsedAmt) ? parsedAmt : 0;
 
                         }
-
+                        catch (Exception ex)
+                        {
+                            Application.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                        }
                     }
 
-                    else if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_COMBO_SELECT && pVal.BeforeAction == false)
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
                     {
+                        
+
+                        SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("37").Specific;
+                        string bal3 = balance2.Value.Trim();
+                        string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
+                        amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
+
+                        basebank = amtbank;
+
+                        double remainBalance = baseamt-amtbank ;
+                        SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
+                        oEditamt.Value = remainBalance.ToString("F2");
+
+                        remainbank = remainBalance;
+
 
                     }
-                    else if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_LOST_FOCUS && pVal.BeforeAction == false)
+
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_LOST_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
                     {
+                        SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
+                        string bal3 = balance2.Value.Trim();
+                        string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
+                        amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
+
+                        amtcash = baseamt - (amtbank + basebank);
+                        
+                    }
 
 
 
+
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "38")
+                    {
+                       
+                        double remainBalance = amtcash;
+                        SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("38").Specific;
+                        oEditamt.Value = remainBalance.ToString("F2");
+
+                        //baseamt = remainBalance;
 
                     }
+
+
+
                 }
+
+
+
 
             }
             catch (Exception ex)
@@ -73,38 +189,6 @@ namespace TDS_VDS_ADD_ON
             }
         }
 
-        private static void oApplication_FormDataEvent(ref SAPbouiCOM.BusinessObjectInfo BusinessObjectInfo, out bool BubbleEvent)
-        {
-            BubbleEvent = true;
-            if (BusinessObjectInfo.BeforeAction == true && BusinessObjectInfo.EventType == SAPbouiCOM.BoEventTypes.et_FORM_DATA_ADD)
-            {
-                switch (BusinessObjectInfo.FormTypeEx)
-                {
-                    case "196":
-                        {
-                            //logic
-                            //to get a data from grid
-                            //insert query or use di api service to insert into udo as defaultform or non udo
-
-                            break;
-                        }
-                }
-            }
-            else if (BusinessObjectInfo.BeforeAction == false && BusinessObjectInfo.EventType == SAPbouiCOM.BoEventTypes.et_FORM_DATA_LOAD)
-            {
-                switch (BusinessObjectInfo.FormTypeEx)
-                {
-                    case "196":
-                        {
-                            //logic
-                            //to get with udo or non objective table where sales order number exist or not
-                            //if so no is exist then execute a query and pass the values to grid.
-
-
-                            break;
-                        }
-                }
-            }
-        }
+        
     }
 }

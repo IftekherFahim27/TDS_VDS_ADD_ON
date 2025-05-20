@@ -42,6 +42,12 @@ namespace TDS_VDS_ADD_ON
                 APDownInvoice objAPDI;
                 objAPDI = new APDownInvoice();
 
+                OutgoingPayment objOP;
+                objOP = new OutgoingPayment();
+
+                PaymentsMeansAddon objPM;
+                objPM = new PaymentsMeansAddon();
+
 
                 oApp.RegisterMenuEventHandler(MyMenu.SBO_Application_MenuEvent);
                 Application.SBO_Application.AppEvent += new SAPbouiCOM._IApplicationEvents_AppEventEventHandler(SBO_Application_AppEvent);
