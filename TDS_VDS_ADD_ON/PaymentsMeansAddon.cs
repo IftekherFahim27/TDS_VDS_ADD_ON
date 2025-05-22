@@ -24,6 +24,18 @@ namespace TDS_VDS_ADD_ON
         public double basebank;
         public double remainbank;
 
+        double overallAmount, totalTdsVds;
+
+        bool isBtnClicked = false;
+        bool isFirstFocusSet = false;
+        string firstFocusedItem = "";
+        string secondItem = "";
+        double paymentDifference = 0.0;
+        double remainingAmount = 0.0;
+        bool isSecondValuePending = false;
+
+
+
         private void SBO_Application_ItemEvent(string FormUID, ref SAPbouiCOM.ItemEvent pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
@@ -123,6 +135,26 @@ namespace TDS_VDS_ADD_ON
                             string bal2 = bal.StartsWith("BDT") ? bal.Substring(4).Trim() : bal;
                             baseamt = double.TryParse(bal2, out double parsedAmt) ? parsedAmt : 0;
 
+                            overallAmount = baseamt;
+
+                            SAPbouiCOM.EditText tv = (SAPbouiCOM.EditText)oform.Items.Item("37").Specific;
+                            string tvbal = tv.Value.Trim();
+                            string tvbal2 = tvbal.StartsWith("BDT") ? tvbal.Substring(4).Trim() : tvbal;
+                            totalTdsVds = double.TryParse(tvbal2, out double parsedAmt2) ? parsedAmt2 : 0;
+
+                            
+
+                            paymentDifference = overallAmount - totalTdsVds;
+                            if (paymentDifference < 0) paymentDifference = 0;
+
+                            // Initialize
+                            isBtnClicked = true;
+                            isFirstFocusSet = false;
+                            isSecondValuePending = false;
+                            firstFocusedItem = "";
+                            secondItem = "";
+                            remainingAmount = 0.0;
+
                         }
                         catch (Exception ex)
                         {
@@ -130,50 +162,119 @@ namespace TDS_VDS_ADD_ON
                         }
                     }
 
-                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
+                    //if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
+                    //{
+
+
+                    //    SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("37").Specific;
+                    //    string bal3 = balance2.Value.Trim();
+                    //    string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
+                    //    amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
+
+                    //    basebank = amtbank;
+
+                    //    double remainBalance = baseamt-amtbank ;
+                    //    SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
+                    //    oEditamt.Value = remainBalance.ToString("F2");
+
+                    //    remainbank = remainBalance;
+
+
+                    //}
+
+                    //if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_LOST_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
+                    //{
+                    //    SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
+                    //    string bal3 = balance2.Value.Trim();
+                    //    string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
+                    //    amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
+
+                    //    amtcash = baseamt - (amtbank + basebank);
+
+                    //}
+
+
+
+
+                    //if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "38")
+                    //{
+
+                    //    double remainBalance = amtcash;
+                    //    SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("38").Specific;
+                    //    oEditamt.Value = remainBalance.ToString("F2");
+
+                    //    //baseamt = remainBalance;
+
+                    //}
+                    // First Time Got Focus After btn1
+                    // 2. Handle First Field Got Focus (Bank or Cash)
+
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && isBtnClicked && (pVal.ItemUID == "34" || pVal.ItemUID == "38"))
                     {
-                        
+                        // Detect active pane
+                        int currentPane = oform.PaneLevel;
 
-                        SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("37").Specific;
-                        string bal3 = balance2.Value.Trim();
-                        string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
-                        amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
+                        // Skip if wrong pane
+                        if ((pVal.ItemUID == "34" && currentPane != 2) || (pVal.ItemUID == "38" && currentPane != 3))
+                            return;
 
-                        basebank = amtbank;
+                        // Handle First Focus
+                        if (!isFirstFocusSet)
+                        {
+                            firstFocusedItem = pVal.ItemUID;               // "34" or "38"
+                            secondItem = (firstFocusedItem == "34") ? "38" : "34";
+                            isFirstFocusSet = true;
 
-                        double remainBalance = baseamt-amtbank ;
-                        SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
-                        oEditamt.Value = remainBalance.ToString("F2");
+                            // Set full difference in first field
+                            SAPbouiCOM.EditText txtFirst = (SAPbouiCOM.EditText)oform.Items.Item(firstFocusedItem).Specific;
+                            txtFirst.Value = paymentDifference.ToString("F2");
 
-                        remainbank = remainBalance;
+                            // Don't set second yet (may not be visible)
+                            remainingAmount = 0.0;
+                        }
+                        else if (pVal.ItemUID == secondItem && isSecondValuePending)
+                        {
+                            // Set remaining in second field when it gets focus
+                            SAPbouiCOM.EditText txtSecond = (SAPbouiCOM.EditText)oform.Items.Item(secondItem).Specific;
+                            txtSecond.Value = remainingAmount.ToString("F2");
 
-
+                            isSecondValuePending = false; // Done
+                        }
                     }
 
-                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_LOST_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "34")
+                    // 3. Handle First Field Lost Focus: Compute Remaining
+                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_LOST_FOCUS && isBtnClicked && isFirstFocusSet && pVal.ItemUID == firstFocusedItem)
                     {
-                        SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item("34").Specific;
-                        string bal3 = balance2.Value.Trim();
-                        string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
-                        amtbank = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
-
-                        amtcash = baseamt - (amtbank + basebank);
-                        
-                    }
-
-
-
-
-                    if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_GOT_FOCUS && pVal.BeforeAction == false && pVal.ItemUID == "38")
-                    {
+                        //SAPbouiCOM.EditText txtFirst = (SAPbouiCOM.EditText)oform.Items.Item(firstFocusedItem).Specific;
+                        double firstValue = 0.0;
                        
-                        double remainBalance = amtcash;
-                        SAPbouiCOM.EditText oEditamt = (SAPbouiCOM.EditText)oform.Items.Item("38").Specific;
-                        oEditamt.Value = remainBalance.ToString("F2");
 
-                        //baseamt = remainBalance;
+                        SAPbouiCOM.EditText balance2 = (SAPbouiCOM.EditText)oform.Items.Item(firstFocusedItem).Specific;
+                        string bal3 = balance2.Value.Trim();
+                        string bal4 = bal3.StartsWith("BDT") ? bal3.Substring(4).Trim() : bal3;
+                        firstValue = double.TryParse(bal4, out double parsedAmt2) ? parsedAmt2 : 0;
 
+
+
+                        remainingAmount = paymentDifference - firstValue;
+                        if (remainingAmount < 0) remainingAmount = 0.0;
+
+                        isSecondValuePending = true;
                     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
